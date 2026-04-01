@@ -1,0 +1,207 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   Global Styles - Cybersecurity Dark Theme
+   ============================================================================ */
+
+@layer base {
+  * {
+    @apply border-gray-800;
+  }
+  
+  body {
+    @apply bg-cyber-darker text-gray-100 antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-white/5 backdrop-blur-lg border border-white/10;
+  }
+
+  .glass-hover {
+    @apply glass transition-all duration-300 hover:bg-white/10 hover:border-white/20;
+  }
+
+  /* Neon glow effects */
+  .glow-cyan {
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+  }
+
+  .glow-cyan-strong {
+    box-shadow: 0 0 30px rgba(0, 217, 255, 0.6);
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+  }
+
+  .glow-green {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+
+  .glow-pink {
+    box-shadow: 0 0 20px rgba(236, 72, 153, 0.3);
+  }
+
+  /* Gradient backgrounds */
+  .gradient-cyber {
+    background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0a0e27 100%);
+  }
+
+  .gradient-cyber-border {
+    background: linear-gradient(135deg, #00d9ff 0%, #a855f7 50%, #ec4899 100%);
+  }
+
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-cyber-dark/50;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-cyber-blue/30 rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-cyber-blue/50;
+  }
+
+  /* Button styles */
+  .btn-primary {
+    @apply px-8 py-4 bg-cyber-blue text-cyber-darker font-bold rounded-xl 
+           transition-all duration-300 hover:bg-white hover:shadow-[0_0_30px_rgba(0,217,255,0.4)]
+           active:scale-[0.98] disabled:opacity-50 tracking-tight
+           disabled:cursor-not-allowed uppercase text-sm;
+  }
+
+  .btn-secondary {
+    @apply px-8 py-4 glass font-bold rounded-xl 
+           transition-all duration-300 hover:bg-white/10 hover:border-white/30
+           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed
+           uppercase text-sm tracking-tight;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-8 transition-all duration-500;
+  }
+
+  .card-hover {
+    @apply card hover:bg-white/10 hover:border-white/20 hover:shadow-lg cursor-pointer;
+  }
+
+  /* Input styles */
+  .input {
+    @apply w-full px-4 py-3 glass rounded-lg 
+           text-gray-100 placeholder-gray-500
+           focus:outline-none focus:ring-2 focus:ring-cyber-blue/50 
+           focus:border-cyber-blue/50 transition-all duration-200;
+  }
+
+  /* Badge styles */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-cyber-green/20 text-cyber-green border border-cyber-green/30;
+  }
+
+  .badge-danger {
+    @apply badge bg-red-500/20 text-red-400 border border-red-500/30;
+  }
+
+  .badge-warning {
+    @apply badge bg-yellow-500/20 text-yellow-400 border border-yellow-500/30;
+  }
+
+  .badge-info {
+    @apply badge bg-cyber-blue/20 text-cyber-blue border border-cyber-blue/30;
+  }
+}
+
+@layer utilities {
+  /* Text gradient utilities */
+  .text-gradient-cyber {
+    @apply bg-gradient-to-r from-cyber-blue via-cyber-purple to-cyber-pink bg-clip-text text-transparent;
+  }
+
+  /* Animation utilities */
+  .animate-on-scroll {
+    @apply opacity-0 translate-y-8 transition-all duration-700;
+  }
+
+  .animate-on-scroll.visible {
+    @apply opacity-100 translate-y-0;
+  }
+}
+
+/* ============================================================================
+   Custom Animations
+   ============================================================================ */
+
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.scanning-line {
+  animation: scan 2s linear infinite;
+}
+
+/* Matrix-style background effect (optional) */
+@keyframes matrix-rain {
+  0% {
+    transform: translateY(-100%);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+.matrix-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.05;
+}
+
+/* ============================================================================
+   Loading Spinner
+   ============================================================================ */
+
+.spinner {
+  border: 3px solid rgba(0, 217, 255, 0.1);
+  border-top-color: #00d9ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

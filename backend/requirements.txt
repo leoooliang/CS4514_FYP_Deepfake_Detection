@@ -1,0 +1,115 @@
+# ============================================================================
+# Multimodal Deepfake Detection System - Backend Dependencies
+# ============================================================================
+# Python 3.10+ required
+# Install: pip install -r requirements.txt
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Core Web Framework
+# ----------------------------------------------------------------------------
+fastapi==0.109.0                # High-performance async web framework
+uvicorn[standard]==0.27.0       # ASGI server for FastAPI
+python-multipart==0.0.6         # Required for file upload handling
+
+# ----------------------------------------------------------------------------
+# Deep Learning & ML
+# ----------------------------------------------------------------------------
+torch==2.2.2                    # PyTorch for model inference (compatible with facenet-pytorch)
+torchvision==0.17.2            # Computer vision models and utilities
+torchaudio==2.2.2              # Audio processing with PyTorch
+facenet-pytorch==2.6.0         # Face detection with MTCNN
+timm==0.9.12                   # PyTorch Image Models (pretrained backbones)
+numpy==1.26.3                   # Numerical computing foundation
+scipy==1.11.4                   # Scientific computing utilities (DCT transforms)
+
+# CLIP for dual-stream image detection via transformers
+transformers<5.0               # HuggingFace transformers (compatible with PyTorch 2.2.x)
+ftfy==6.1.3                    # Text normalization for CLIP
+regex==2023.12.25              # Regular expressions for CLIP
+
+# ----------------------------------------------------------------------------
+# Image Processing
+# ----------------------------------------------------------------------------
+Pillow==10.2.0                  # Image loading, manipulation, and conversion
+opencv-python==4.9.0.80         # Computer vision and video processing
+imageio==2.33.1                 # Image and video I/O library
+
+# ----------------------------------------------------------------------------
+# Audio Processing
+# ----------------------------------------------------------------------------
+librosa==0.10.1                 # Audio analysis and feature extraction
+soundfile==0.12.1               # Audio file I/O
+pydub==0.25.1                   # Audio manipulation
+
+# ----------------------------------------------------------------------------
+# Video Processing
+# ----------------------------------------------------------------------------
+moviepy==1.0.3                  # Video editing and processing
+ffmpeg-python==0.2.0            # FFmpeg wrapper for video operations
+
+# ----------------------------------------------------------------------------
+# Data Validation & Serialization
+# ----------------------------------------------------------------------------
+pydantic==2.5.3                 # Data validation using Python type hints
+pydantic-settings==2.1.0        # Settings management for Pydantic
+
+# ----------------------------------------------------------------------------
+# Database & ORM
+# ----------------------------------------------------------------------------
+sqlalchemy==2.0.25              # SQL toolkit and ORM
+
+# ----------------------------------------------------------------------------
+# API & HTTP
+# ----------------------------------------------------------------------------
+aiofiles==23.2.1                # Async file operations
+python-jose[cryptography]==3.3.0  # JWT token handling
+passlib[bcrypt]==1.7.4          # Password hashing
+python-dotenv==1.0.0            # Environment variable management
+
+# ----------------------------------------------------------------------------
+# Utilities
+# ----------------------------------------------------------------------------
+loguru==0.7.2                   # Advanced logging
+python-magic==0.4.27            # File type detection (MIME)
+humanize==4.9.0                 # Human-readable numbers and dates
+tqdm==4.66.1                    # Progress bars
+
+# ----------------------------------------------------------------------------
+# Testing & Development
+# ----------------------------------------------------------------------------
+pytest==7.4.4                   # Testing framework
+pytest-asyncio==0.23.3          # Async test support
+pytest-cov==4.1.0               # Code coverage
+httpx==0.26.0                   # Async HTTP client for testing
+black==24.1.1                   # Code formatter
+flake8==7.0.0                   # Linting
+mypy==1.8.0                     # Static type checking
+
+# ----------------------------------------------------------------------------
+# Performance & Monitoring
+# ----------------------------------------------------------------------------
+psutil==5.9.7                   # System and process monitoring
+
+# ----------------------------------------------------------------------------
+# CORS & Security
+# ----------------------------------------------------------------------------
+# CORS is handled by FastAPI's built-in middleware (starlette.middleware.cors)
+
+# ============================================================================
+# NOTES:
+# ============================================================================
+# 1. PyTorch 2.2.2 with CUDA 12.1 is used for compatibility with facenet-pytorch.
+#    To reinstall or update:
+#    py -m pip install torch==2.2.2 torchvision==0.17.2 torchaudio==2.2.2 --index-url https://download.pytorch.org/whl/cu121
+#
+# 2. For python-magic on Windows, you need to install python-magic-bin:
+#    pip install python-magic-bin==0.4.14
+#
+# 3. FFmpeg is required for video processing. Install separately:
+#    - Windows: choco install ffmpeg
+#    - Mac: brew install ffmpeg
+#    - Linux: apt-get install ffmpeg
+#
+# 4. For production, pin all dependencies to exact versions for reproducibility
+# ============================================================================
