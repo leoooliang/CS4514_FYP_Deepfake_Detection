@@ -2,7 +2,7 @@
 Process ASVspoof 2021 audio dataset for PyTorch training.
 
 This script:
-1. Parses the trial_metadata.txt file
+1. Parses the trial_metadata.txt file to get the metadata of the audio files
 2. Samples a balanced subset of 10,000 audio files (5500 real + 5500 fake)
 3. Splits them into Train (70%), Validation (15%), and Test (15%) sets
 4. Organizes files into PyTorch-compatible directory structures
@@ -17,13 +17,26 @@ from tqdm import tqdm
 
 
 def parse_metadata(metadata_path):
-    """Parse the trial_metadata.txt file."""
+    """
+    Parse the trial_metadata.txt file.
+    """
+
     print("Loading metadata...")
     
     columns = [
-        "speaker_id", "utterance_id", "codec", "source_db", "attack_id", 
-        "label", "trim", "partition", "vocoder", "vcc_task", 
-        "vcc_team", "vcc_gender", "vcc_language"
+        "speaker_id", 
+        "utterance_id", 
+        "codec", 
+        "source_db", 
+        "attack_id", 
+        "label", 
+        "trim", 
+        "partition", 
+        "vocoder", 
+        "vcc_task", 
+        "vcc_team", 
+        "vcc_gender", 
+        "vcc_language"
     ]
     
     df = pd.read_csv(metadata_path, sep=' ', header=None, names=columns)
@@ -34,11 +47,17 @@ def parse_metadata(metadata_path):
 
 
 def sample_balanced_data(df, flac_folder, n_samples_per_class=5500):
-    """Sample balanced data: 5500 real + 5500 fake, ensuring files exist."""
+    """
+    Sample balanced data: 5500 real + 5500 fake, ensuring files exist.
+    """
+
     print(f"\nSampling {n_samples_per_class} samples per class (verifying file existence)...")
     
     def sample_valid_files(label_df, label_name, target_count):
-        """Sample files for a specific label, skipping missing files."""
+        """
+        Sample files for a specific label, skipping missing files."
+        """
+
         valid_files = []
         attempted = 0
         shuffled_df = label_df.sample(frac=1, random_state=42).reset_index(drop=True)
@@ -66,15 +85,12 @@ def sample_balanced_data(df, flac_folder, n_samples_per_class=5500):
         
         return result_df
     
-    # Sample bonafide (real) files
     bonafide_df = df[df['label'] == 'bonafide']
     valid_bonafide = sample_valid_files(bonafide_df, 'bonafide (real)', n_samples_per_class)
     
-    # Sample spoof (fake) files
     spoof_df = df[df['label'] == 'spoof']
     valid_spoof = sample_valid_files(spoof_df, 'spoof (fake)', n_samples_per_class)
     
-    # Combine
     balanced_df = pd.concat([valid_bonafide, valid_spoof], ignore_index=True)
     print(f"\nTotal balanced dataset: {len(balanced_df)} files")
     print(f"  - Real: {len(valid_bonafide)}")
@@ -84,10 +100,12 @@ def sample_balanced_data(df, flac_folder, n_samples_per_class=5500):
 
 
 def split_dataset(df, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
-    """Split dataset into train, validation, and test sets with stratification."""
+    """
+    Split dataset into train, validation, and test sets with stratification.
+    """
+
     print(f"\nSplitting dataset: Train={train_ratio*100}%, Val={val_ratio*100}%, Test={test_ratio*100}%")
     
-    # Create binary labels for stratification (bonafide=0, spoof=1)
     labels = (df['label'] == 'spoof').astype(int)
     
     # First split: 70% train, 30% temp
@@ -98,7 +116,6 @@ def split_dataset(df, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
         random_state=42
     )
     
-    # Second split on temp: 50% val, 50% test (resulting in 15% each overall)
     temp_labels = (temp_df['label'] == 'spoof').astype(int)
     val_df, test_df = train_test_split(
         temp_df, 
@@ -123,7 +140,10 @@ def split_dataset(df, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
 
 
 def create_directory_structure(output_base):
-    """Create PyTorch-compatible directory structure."""
+    """
+    Create PyTorch-compatible directory structure.
+    """
+
     print(f"\nCreating directory structure at {output_base}...")
     
     splits = ['train', 'val', 'test']
@@ -137,7 +157,10 @@ def create_directory_structure(output_base):
 
 
 def copy_files(df, split_name, flac_folder, output_base):
-    """Copy files to their respective directories with progress bar."""
+    """
+    Copy files to their respective directories with progress bar.
+    """
+
     print(f"\nCopying {split_name} files...")
     
     copied_count = 0
@@ -147,16 +170,12 @@ def copy_files(df, split_name, flac_folder, output_base):
         utterance_id = row['utterance_id']
         label = row['label']
         
-        # Map label to folder name
         class_folder = 'real' if label == 'bonafide' else 'fake'
         
-        # Source file path (add .flac extension)
         source_file = Path(flac_folder) / f"{utterance_id}.flac"
         
-        # Destination file path
         dest_file = Path(output_base) / split_name / class_folder / f"{utterance_id}.flac"
         
-        # Copy file (should exist since we pre-validated)
         if source_file.exists():
             shutil.copy2(source_file, dest_file)
             copied_count += 1
@@ -168,7 +187,10 @@ def copy_files(df, split_name, flac_folder, output_base):
 
 
 def verify_dataset(output_base):
-    """Verify the final dataset structure and counts."""
+    """
+    Verify the final dataset structure and counts.
+    """
+
     print("\n" + "="*60)
     print("DATASET VERIFICATION")
     print("="*60)
@@ -193,7 +215,6 @@ def verify_dataset(output_base):
 
 
 def main():
-    # Configuration
     RAW_DATA_BASE = Path("model_training") / "raw_data"
     FLAC_FOLDER = RAW_DATA_BASE / "ASVspoof2021_DF_eval" / "flac"
     METADATA_FILE = RAW_DATA_BASE / "ASVspoof2021_DF_eval" / "trial_metadata.txt"
@@ -208,33 +229,26 @@ def main():
     print(f"Output folder: {OUTPUT_BASE}")
     print("="*60)
     
-    # Check if paths exist
     if not METADATA_FILE.exists():
         raise FileNotFoundError(f"Metadata file not found: {METADATA_FILE}")
     if not FLAC_FOLDER.exists():
         raise FileNotFoundError(f"FLAC folder not found: {FLAC_FOLDER}")
     
-    # Step 1: Parse metadata
     df = parse_metadata(METADATA_FILE)
     
-    # Step 2: Sample balanced data (with file existence validation)
     balanced_df = sample_balanced_data(df, FLAC_FOLDER, n_samples_per_class=5500)
     
-    # Step 3: Split into train/val/test
     train_df, val_df, test_df = split_dataset(balanced_df)
     
-    # Step 4: Create directory structure
     create_directory_structure(OUTPUT_BASE)
     
-    # Step 5: Copy files
     copy_files(train_df, 'train', FLAC_FOLDER, OUTPUT_BASE)
     copy_files(val_df, 'val', FLAC_FOLDER, OUTPUT_BASE)
     copy_files(test_df, 'test', FLAC_FOLDER, OUTPUT_BASE)
     
-    # Step 6: Verify dataset
     verify_dataset(OUTPUT_BASE)
     
-    print("\n✓ Dataset processing completed successfully!")
+    print("\nSUCCESS: Dataset processing completed successfully!")
 
 
 if __name__ == "__main__":

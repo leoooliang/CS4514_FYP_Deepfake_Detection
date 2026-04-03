@@ -5,7 +5,7 @@ Matches training: image scaled to [0, 255], depthwise 5×5 SRM on each channel;
 residual display uses clamp [-3, 3], ÷3 to [-1, 1], then mapped to [0, 1] for imshow.
 
 Run from repo root or this folder:
-  python model_training/data_process_scripts/demo_srm_before_after.py
+  python model_training/report_figures/demo_srm_before_after.py
   python demo_srm_before_after.py
 """
 
@@ -23,8 +23,11 @@ import torch
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 UTILS_DIR = SCRIPT_DIR.parent / "utils"
+DATA_PROCESS_DIR = SCRIPT_DIR.parent / "data_process_scripts"
 if str(UTILS_DIR) not in sys.path:
     sys.path.insert(0, str(UTILS_DIR))
+if str(DATA_PROCESS_DIR) not in sys.path:
+    sys.path.insert(0, str(DATA_PROCESS_DIR))
 
 from models import SRMConv2d  # noqa: E402
 

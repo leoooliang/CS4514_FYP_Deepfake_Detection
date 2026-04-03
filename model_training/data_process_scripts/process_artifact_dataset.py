@@ -1,3 +1,16 @@
+"""
+Process ArtiFact dataset into precomputed .pt tensors for the Image Detection Module.
+
+This script:
+1. Crops the largest face in the image using MTCNN with 1.15x margin
+2. Resizes the face to 224x224
+3. Splits the images into train/val/test sets with stratification
+4. Saves the images into PyTorch-compatible directory structures
+
+Output: 20,000 images total (10,000 real + 10,000 fake) split into train/val/test
+"""
+
+
 import cv2
 import os
 import random
@@ -8,7 +21,6 @@ from facenet_pytorch import MTCNN
 
 random.seed(42)
 
-# Initialize MTCNN face detector globally
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 mtcnn = MTCNN(keep_all=False, select_largest=True, post_process=False, device=device)
 
@@ -37,62 +49,48 @@ TARGET_COUNTS = {
 
 def crop_with_margin_and_resize(image, target_size=(224, 224), margin_percent=0.15):
     """
-    Detect the largest face in image using MTCNN, crop with 1.3x margin, and resize to target_size.
-    
-    Args:
-        image: Input BGR image from OpenCV
-        target_size: Output size (width, height)
-        margin_percent: Percentage margin to add around detected face bounding box (0.15 = 15% = 1.3x total)
-    
-    Returns:
-        Cropped and resized face image of size target_size, or None if no face detected
+    Detect the largest face in image using MTCNN, crop with 1.15x margin, and resize to target_size.
     """
+
     h, w = image.shape[:2]
     
-    # Convert BGR to RGB for MTCNN
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     
-    # Detect faces using MTCNN
     boxes, probs = mtcnn.detect(image_rgb)
     
-    # Check if face detected
     if boxes is not None and len(boxes) > 0:
-        # Extract coordinates of the largest face
         x1, y1, x2, y2 = [int(b) for b in boxes[0]]
         
-        # Calculate width and height of detected box
         face_w = x2 - x1
         face_h = y2 - y1
         
-        # Calculate margin (15% of width and 15% of height)
         margin_w = int(face_w * margin_percent)
         margin_h = int(face_h * margin_percent)
         
-        # Expand bounding box by margin on all four sides
         x1 = x1 - margin_w
         y1 = y1 - margin_h
         x2 = x2 + margin_w
         y2 = y2 + margin_h
         
-        # Clamp coordinates to image boundaries
         x1 = max(0, x1)
         y1 = max(0, y1)
         x2 = min(w, x2)
         y2 = min(h, y2)
         
-        # Crop the expanded face from original image
         cropped_face = image[y1:y2, x1:x2]
         
-        # Resize to target size using INTER_LINEAR
         resized_face = cv2.resize(cropped_face, target_size, interpolation=cv2.INTER_LINEAR)
         
         return resized_face
     else:
-        # No face detected - return None
         return None
 
 
 def collect_images(source_dir):
+    """
+    Collect all images from the source directory.
+    """
+    
     source_path = Path(source_dir)
     if not source_path.exists():
         return []
@@ -108,12 +106,15 @@ def collect_images(source_dir):
 
 
 def sample_and_split_images(all_images, target_count):
-    # Sample 1.5x the target to account for images without detectable faces
+    """
+    Sample and split the images into train/val/test sets.
+    """
+
     sampling_count = int(target_count * 1.5)
     
     if len(all_images) < sampling_count:
         if len(all_images) < target_count:
-            print(f"  ⚠️ Warning: Only {len(all_images)} images available, requested {target_count}")
+            print(f"WARNING: Only {len(all_images)} images available, requested {target_count}")
         sampled = all_images.copy()
     else:
         sampled = random.sample(all_images, sampling_count)
@@ -133,15 +134,17 @@ def sample_and_split_images(all_images, target_count):
 
 
 def process_and_copy_image(src_path, dst_path, target_size=(224, 224)):
+    """
+    Process and copy the image to the destination directory.
+    """
+
     img = cv2.imread(str(src_path))
     
     if img is None:
         return False
     
-    # Apply face detection and cropping with 1.3x margin
     cropped_img = crop_with_margin_and_resize(img, target_size)
     
-    # If no face detected, skip this image
     if cropped_img is None:
         return False
     
@@ -150,24 +153,27 @@ def process_and_copy_image(src_path, dst_path, target_size=(224, 224)):
 
 
 def process_category(category_type, category_name, target_count):
+    """
+    Process a category of images and copy them to the destination directory.
+    """
+
     print(f"\nProcessing {category_type}/{category_name} (target: {target_count} images)")
     
     source_dir = BASE_DIR / category_type / category_name
     
     if not source_dir.exists():
-        print(f"  ❌ ERROR: Directory not found: {source_dir}")
+        print(f"ERROR: Directory not found: {source_dir}")
         return {'train': 0, 'val': 0, 'test': 0}
     
     all_images = collect_images(source_dir)
     print(f"  Found {len(all_images)} images in source directory")
     
     if len(all_images) == 0:
-        print(f"  ❌ ERROR: No images found in {source_dir}")
+        print(f"ERROR: No images found in {source_dir}")
         return {'train': 0, 'val': 0, 'test': 0}
     
     splits = sample_and_split_images(all_images, target_count)
     
-    # Calculate target counts per split
     target_per_split = {
         'train': int(target_count * TRAIN_RATIO),
         'val': int(target_count * VAL_RATIO),
@@ -185,7 +191,6 @@ def process_category(category_type, category_name, target_count):
         img_output_idx = 0
         img_source_idx = 0
         
-        # Keep searching for valid faces until we hit split target
         with tqdm(total=split_target, desc=f"  {split_name}", leave=False) as pbar:
             while processed_count < split_target and img_source_idx < len(images):
                 img_path = images[img_source_idx]
@@ -202,9 +207,9 @@ def process_category(category_type, category_name, target_count):
         
         results[split_name] = processed_count
         if processed_count < split_target:
-            print(f"    {split_name}: ⚠️ {processed_count}/{split_target} images processed (exhausted {img_source_idx} sampled images)")
+            print(f"    {split_name}: WARNING: {processed_count}/{split_target} images processed (exhausted {img_source_idx} sampled images)")
         else:
-            print(f"    {split_name}: ✓ {processed_count}/{split_target} images processed (from {img_source_idx} attempted)")
+            print(f"    {split_name}: SUCCESS: {processed_count}/{split_target} images processed (from {img_source_idx} attempted)")
     
     return results
 
@@ -218,7 +223,7 @@ def main():
     print(f"Output directory: {OUTPUT_DIR}")
     
     if not BASE_DIR.exists():
-        print(f"\n❌ ERROR: Input directory does not exist: {BASE_DIR}")
+        print(f"\nERROR: Input directory does not exist: {BASE_DIR}")
         print("Please check the path and try again.")
         return
     
@@ -243,7 +248,7 @@ def main():
         all_results[f"fake_{category_name}"] = results
     
     print("\n" + "=" * 80)
-    print("✅ Dataset processing complete!")
+    print("SUCCESS: Dataset processing complete!")
     print("=" * 80)
     
     print("\nSummary by split:")

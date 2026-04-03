@@ -3,7 +3,7 @@ Figure generator for reports: one random raw ArtiFact image vs the same pipeline
 output as process_artifact_dataset.py (MTCNN face crop, 15% margin, 224×224).
 
 Run from repo root or this folder:
-  python model_training/data_process_scripts/demo_artifact_before_after.py
+  python model_training/report_figures/demo_artifact_before_after.py
   python demo_artifact_before_after.py
 """
 
@@ -19,8 +19,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
+DATA_PROCESS_DIR = SCRIPT_DIR.parent / "data_process_scripts"
+if str(DATA_PROCESS_DIR) not in sys.path:
+    sys.path.insert(0, str(DATA_PROCESS_DIR))
 
 import process_artifact_dataset as artifact  # noqa: E402
 

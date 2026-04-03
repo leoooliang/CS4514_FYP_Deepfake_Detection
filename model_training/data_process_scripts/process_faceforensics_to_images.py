@@ -1,6 +1,11 @@
 """
 FaceForensics++ (C23) Video to Image Dataset Processor
-Extracts frames from videos to create a balanced deepfake detection image dataset.
+
+This script:
+1. Extracts frames from videos using MTCNN with 1.15x margin
+2. Resizes the face to 224x224
+3. Splits the images into train/val/test sets with stratification
+4. Saves the images into PyTorch-compatible directory structures
 
 Output: 20,000 images total (10,000 real + 10,000 fake) split into train/val/test
 """
@@ -14,7 +19,6 @@ import numpy as np
 import torch
 from facenet_pytorch import MTCNN
 
-# Initialize MTCNN face detector globally
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 mtcnn = MTCNN(keep_all=False, select_largest=True, post_process=False, device=device)
 
@@ -22,15 +26,17 @@ mtcnn = MTCNN(keep_all=False, select_largest=True, post_process=False, device=de
 def extract_video_id(filename):
     """
     Extract the base (target) video ID from a filename.
-    For original: '000.mp4' -> '000'
-    For fake: '000_003.mp4' -> '000' (where 000 is base, 003 is source face)
     """
+
     stem = Path(filename).stem
     return stem.split('_')[0]   
 
 
 def get_all_video_ids(base_dir):
-    """Get all unique video IDs from the original videos directory."""
+    """
+    Get all unique video IDs from the original videos directory.
+    """
+
     original_dir = Path(base_dir) / "original"
     video_files = sorted(list(original_dir.glob("*.mp4")))
     video_ids = sorted(set([extract_video_id(vf.name) for vf in video_files]))
@@ -40,15 +46,10 @@ def get_all_video_ids(base_dir):
 def split_video_ids(video_ids, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
     """
     Split video IDs into train/val/test sets SEQUENTIALLY.
-    
-    CRITICAL FYP FIX: We do NOT use random.shuffle here!
-    FaceForensics++ swaps faces within contiguous blocks (e.g., 0-719).
-    By splitting sequentially, we ensure that if 000 and 003 swap faces,
-    they both end up in the exact same dataset split, preventing source-face leakage.
     """
+
     assert abs(train_ratio + val_ratio + test_ratio - 1.0) < 1e-6, "Ratios must sum to 1.0"
     
-    # Sort just to be absolutely certain they are sequential
     video_ids_seq = sorted(video_ids.copy())
     
     total = len(video_ids_seq)
@@ -66,73 +67,48 @@ def split_video_ids(video_ids, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15)
 
 def crop_with_margin_and_resize(image, target_size=(224, 224), margin_percent=0.15):
     """
-    Detect the largest face in image using MTCNN, crop with 1.3x margin, and resize to target_size.
-    
-    Args:
-        image: Input BGR image from OpenCV
-        target_size: Output size (width, height)
-        margin_percent: Percentage margin to add around detected face bounding box (0.15 = 15% = 1.3x total)
-    
-    Returns:
-        Cropped and resized face image of size target_size, or None if no face detected
+    Detect the largest face in image using MTCNN, crop with 1.15x margin, and resize to target_size.
     """
+
     h, w = image.shape[:2]
     
-    # Convert BGR to RGB for MTCNN
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     
-    # Detect faces using MTCNN
     boxes, probs = mtcnn.detect(image_rgb)
     
-    # Check if face detected
     if boxes is not None and len(boxes) > 0:
-        # Extract coordinates of the largest face
         x1, y1, x2, y2 = [int(b) for b in boxes[0]]
         
-        # Calculate width and height of detected box
         face_w = x2 - x1
         face_h = y2 - y1
         
-        # Calculate margin (15% of width and 15% of height)
         margin_w = int(face_w * margin_percent)
         margin_h = int(face_h * margin_percent)
         
-        # Expand bounding box by margin on all four sides
         x1 = x1 - margin_w
         y1 = y1 - margin_h
         x2 = x2 + margin_w
         y2 = y2 + margin_h
         
-        # Clamp coordinates to image boundaries
         x1 = max(0, x1)
         y1 = max(0, y1)
         x2 = min(w, x2)
         y2 = min(h, y2)
         
-        # Crop the expanded face from original image
         cropped_face = image[y1:y2, x1:x2]
         
-        # Resize to target size using INTER_LINEAR
         resized_face = cv2.resize(cropped_face, target_size, interpolation=cv2.INTER_LINEAR)
         
         return resized_face
     else:
-        # No face detected - return None
         return None
 
 
 def extract_frames_from_video(video_path, num_frames):
     """
     Extract frames from a video, only keeping frames with detected faces.
-    Continuously samples frames until we collect exactly num_frames valid faces.
-    
-    Args:
-        video_path: Path to the video file
-        num_frames: Number of frames with valid faces to extract
-    
-    Returns:
-        List of processed face images (length may be less than num_frames if not enough faces found)
     """
+
     cap = cv2.VideoCapture(str(video_path))
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     
@@ -142,12 +118,9 @@ def extract_frames_from_video(video_path, num_frames):
     
     frames = []
     
-    # Calculate frame step to sample across the video
-    # Sample more frames than needed to account for frames without faces
     frame_step = max(1, total_frames // (num_frames * 2))
     current_frame = 0
     
-    # Safety counter to prevent infinite loops
     max_attempts = total_frames
     attempts = 0
     
@@ -158,17 +131,14 @@ def extract_frames_from_video(video_path, num_frames):
         if not ret:
             break
         
-        # Apply face detection, cropping, and resizing
         processed_face = crop_with_margin_and_resize(frame)
         
-        # Only add frames where a face was successfully detected
         if processed_face is not None:
             frames.append(processed_face)
         
         current_frame += frame_step
         attempts += 1
         
-        # If we're running out of frames, reduce step size to sample more densely
         if current_frame >= total_frames and len(frames) < num_frames and frame_step > 1:
             frame_step = max(1, frame_step // 2)
             current_frame = frame_step
@@ -178,7 +148,10 @@ def extract_frames_from_video(video_path, num_frames):
 
 
 def process_real_videos(base_dir, video_ids, output_dir, frames_per_video=10):
-    """Process real (original) videos and extract frames."""
+    """
+    Process real (original) videos and extract frames.
+    """
+
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     
@@ -203,7 +176,10 @@ def process_real_videos(base_dir, video_ids, output_dir, frames_per_video=10):
 
 
 def process_fake_videos(base_dir, video_ids, output_dir, target_fake_count, fake_methods):
-    """Process fake videos, handling the target_source format."""
+    """
+    Process fake videos, handling the target_source format.
+    """
+
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     
@@ -219,7 +195,6 @@ def process_fake_videos(base_dir, video_ids, output_dir, target_fake_count, fake
         
         method_videos = []
         for video_id in video_ids:
-            # This matches the base ID (e.g., 000_*.mp4)
             matching_videos = list(method_dir.glob(f"{video_id}_*.mp4"))
             if matching_videos:
                 method_videos.append(matching_videos[0])
@@ -241,14 +216,13 @@ def process_fake_videos(base_dir, video_ids, output_dir, target_fake_count, fake
             frames = extract_frames_from_video(video_file, num_frames)
             
             for frame_idx, frame in enumerate(frames):
-                # The filename preserves the full target_source stem so you can track it
                 output_filename = f"fake_{method}_{video_file.stem}_frame{frame_idx:04d}.jpg"
                 output_filepath = output_path / output_filename
                 cv2.imwrite(str(output_filepath), frame)
                 method_extracted += 1
                 
         total_fake_extracted += method_extracted
-        print(f"  ✓ {method}: {method_extracted} frames extracted")
+        print(f"SUCCESS: {method}: {method_extracted} frames extracted")
         
     return total_fake_extracted
 
@@ -259,7 +233,6 @@ def main():
     print("Sequential Split to Prevent Source-Face Leakage")
     print("=" * 80)
     
-    # Use absolute paths based on script location to avoid path issues
     SCRIPT_DIR = Path(__file__).parent.absolute()
     BASE_DIR = SCRIPT_DIR.parent / "raw_data" / "FaceForensics++_C23"
     OUTPUT_BASE_DIR = SCRIPT_DIR.parent / "data" / "image"
@@ -267,9 +240,8 @@ def main():
     print(f"\nInput directory: {BASE_DIR}")
     print(f"Output directory: {OUTPUT_BASE_DIR}")
     
-    # Verify input directory exists
     if not BASE_DIR.exists():
-        print(f"\n❌ ERROR: Input directory does not exist: {BASE_DIR}")
+        print(f"\nERROR: Input directory does not exist: {BASE_DIR}")
         print("Please check the path and try again.")
         return
     TARGET_REAL_TOTAL = 10000
@@ -280,7 +252,6 @@ def main():
     VAL_RATIO = 0.15
     TEST_RATIO = 0.15
     
-    # REMOVED DeepFakeDetection as requested to strictly enforce naming conventions
     FAKE_METHODS = [
         "Deepfakes",
         "Face2Face",
@@ -294,7 +265,7 @@ def main():
     all_video_ids = get_all_video_ids(BASE_DIR)
     
     if len(all_video_ids) == 0:
-        print(f"\n❌ ERROR: No video files found in {BASE_DIR / 'original'}")
+        print(f"\nERROR: No video files found in {BASE_DIR / 'original'}")
         print("Please verify that the 'original' folder contains .mp4 files.")
         return
     
@@ -334,7 +305,7 @@ def main():
         results[split_name] = {'real': real_count, 'fake': fake_count}
         
     print("\n" + "=" * 80)
-    print("✅ Dataset processing complete! Sequential splits applied.")
+    print("SUCCESS: Dataset processing complete! Sequential splits applied.")
     print("=" * 80)
 
 if __name__ == "__main__":
