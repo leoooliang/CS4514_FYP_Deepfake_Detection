@@ -64,20 +64,26 @@ mlruns/
 events.out.tfevents*
 
 #  model_training — datasets
-model_training/data/
-model_training/raw_data/
+model_training/data/audio/
+model_training/data/video_tensors/
+model_training/data/image/
+model_training/raw_data/ArtiFact/
+model_training/raw_data/FaceForensics++_C23/
+model_training/raw_data/ASVspoof2021_DF_eval/
+model_training/raw_data/FakeAVCeleb_v1.2/
 
 #  model_training — outputs & backups
-model_training/saved_models/
 model_training/results/
-model_training/save_notebooks/
 model_training/utils/
+model_training/save_notebooks/
+
 
 #  backend — runtime directories
 backend/uploads/
 backend/models/
 backend/logs/
 backend/persistent_media/
+backend/scripts/
 
 #  frontend — Node / Vite
 node_modules/

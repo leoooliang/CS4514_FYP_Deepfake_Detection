@@ -1,10 +1,9 @@
 """
-Figure generator for reports: one random raw ArtiFact image vs the same pipeline
-output as process_artifact_dataset.py (MTCNN face crop, 15% margin, 224×224).
+Figure generator for reports: 
+Figure 4.2: Image Preprocessing of A Sample Image with MTCNN and 15% Margin 
 
-Run from repo root or this folder:
-  python model_training/report_figures/demo_artifact_before_after.py
-  python demo_artifact_before_after.py
+Output: artifact_preprocess_before_after.png
+(The output image is not exactly the same as the figure in the report, but the overall effect is the same.)
 """
 
 from __future__ import annotations
@@ -19,11 +18,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-DATA_PROCESS_DIR = SCRIPT_DIR.parent / "data_process_scripts"
+MODEL_TRAINING_DIR = SCRIPT_DIR.parent
+DATA_PROCESS_DIR = MODEL_TRAINING_DIR / "data_process_scripts"
 if str(DATA_PROCESS_DIR) not in sys.path:
     sys.path.insert(0, str(DATA_PROCESS_DIR))
 
-import process_artifact_dataset as artifact  # noqa: E402
+import process_artifact_dataset as artifact
 
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp"}
@@ -58,7 +58,6 @@ def find_sample_with_face(
     rng: random.Random,
     max_attempts: int,
 ) -> tuple[Path, np.ndarray, np.ndarray]:
-    """Returns (path, original_bgr, processed_bgr 224)."""
     if not candidates:
         raise SystemExit(f"No images found under {artifact.BASE_DIR}")
 
@@ -74,7 +73,6 @@ def find_sample_with_face(
 
     raise SystemExit(
         f"No face detected in first {min(max_attempts, len(order))} tried images. "
-        "Increase --max-attempts or point --image to a specific file."
     )
 
 
@@ -86,18 +84,18 @@ def main() -> None:
         default=None,
         help="Specific raw image path; if omitted, picks randomly under raw ArtiFact tree.",
     )
-    parser.add_argument("--seed", type=int, default=1425, help="RNG seed (default 42, same as processor).")
+    parser.add_argument("--seed", type=int, default=43, help="RNG seed.")
     parser.add_argument(
         "--max-attempts",
         type=int,
         default=200,
-        help="Max random files to try when no --image (need MTCNN face).",
+        help="Max random files to try when no --image.",
     )
     parser.add_argument(
         "--max-display-side",
         type=int,
         default=1024,
-        help="Max longest side (px) for the 'before' panel only (full-res still used for crop).",
+        help="Max longest side (px) for the 'before' panel only.",
     )
     parser.add_argument(
         "-o",
@@ -125,7 +123,6 @@ def main() -> None:
         if not artifact.BASE_DIR.exists():
             raise SystemExit(
                 f"Raw data folder missing: {artifact.BASE_DIR}\n"
-                "Use --image PATH to a single file, or place ArtiFact under raw_data."
             )
         all_imgs = collect_all_raw_images(artifact.BASE_DIR)
         src_path, bgr, out = find_sample_with_face(all_imgs, rng, args.max_attempts)
@@ -134,7 +131,6 @@ def main() -> None:
     before_rgb = bgr_to_rgb(before_show)
     after_rgb = bgr_to_rgb(out)
 
-    # Upscale 224 crop for side-by-side balance for the figure only
     ah, aw = after_rgb.shape[0], after_rgb.shape[1]
     target_h = before_rgb.shape[0]
     scale = target_h / ah

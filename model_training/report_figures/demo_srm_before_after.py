@@ -1,12 +1,9 @@
 """
-Figure: random fake RGB image vs SRM (Spatial Rich Model) noise residual.
+Figure generator for reports:
+Figure 2.2: Effect of the Spatial Rich Model (SRM) Filter on a Deepfake Image 
 
-Matches training: image scaled to [0, 255], depthwise 5×5 SRM on each channel;
-residual display uses clamp [-3, 3], ÷3 to [-1, 1], then mapped to [0, 1] for imshow.
-
-Run from repo root or this folder:
-  python model_training/report_figures/demo_srm_before_after.py
-  python demo_srm_before_after.py
+Output: srm_before_after.png
+(The output image is not exactly the same as the figure in the report, but the overall effect is the same.)
 """
 
 from __future__ import annotations
@@ -22,17 +19,17 @@ import numpy as np
 import torch
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-UTILS_DIR = SCRIPT_DIR.parent / "utils"
-DATA_PROCESS_DIR = SCRIPT_DIR.parent / "data_process_scripts"
-if str(UTILS_DIR) not in sys.path:
-    sys.path.insert(0, str(UTILS_DIR))
-if str(DATA_PROCESS_DIR) not in sys.path:
-    sys.path.insert(0, str(DATA_PROCESS_DIR))
+MODEL_TRAINING_DIR = SCRIPT_DIR.parent
+DATA_PROCESS_DIR = MODEL_TRAINING_DIR / "data_process_scripts"
+for _p in (DATA_PROCESS_DIR, MODEL_TRAINING_DIR):
+    s = str(_p)
+    if s not in sys.path:
+        sys.path.insert(0, s)
 
-from models import SRMConv2d  # noqa: E402
+from models import SRMConv2d
 
 try:
-    import process_artifact_dataset as artifact  # noqa: E402
+    import process_artifact_dataset as artifact
 except ImportError:
     artifact = None  # type: ignore
 
@@ -118,7 +115,7 @@ def main() -> None:
         default=default_dir,
         help="Directory to sample a random fake image (default: ArtiFact raw if present).",
     )
-    parser.add_argument("--seed", type=int, default=125, help="RNG seed.")
+    parser.add_argument("--seed", type=int, default=42, help="RNG seed.")
     parser.add_argument(
         "--max-side",
         type=int,
@@ -145,7 +142,6 @@ def main() -> None:
         if args.data_dir is None or not args.data_dir.is_dir():
             raise SystemExit(
                 "Provide --image PATH to a fake image or a valid --data-dir with fake images "
-                "(or place ArtiFact under model_training/raw_data/ArtiFact)."
             )
         src = pick_random_fake_image(args.data_dir, rng)
 

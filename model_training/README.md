@@ -11,15 +11,17 @@ This folder contains all training, evaluation, and data preparation code for the
 
 ```
 model_training/
-├── configs/              # Training configurations for all modules.
-├── models/               # Model definitions for image, audio, video detectors
-├── data_loaders/         # Custom Dataset classes for each module
-├── engine/               # Shared training loop, evaluation, and early stopping logic
 ├── common/               # GPU augmentations, checkpoint I/O, plotting functions
-├── data_process_scripts/ # Scripts to prepare raw datasets
-├── notebooks/            # Jupyter notebooks for training and evaluation of modules
+├── configs/              # Training configurations for all modules.
 ├── data/                 # Processed datasets used by the notebooks
-└── raw_data/             # Raw datasets 
+├── data_loaders/         # Custom Dataset classes for each module
+├── data_process_scripts/ # Scripts to prepare raw datasets
+├── engine/               # Shared training loop, evaluation, and early stopping logic
+├── models/               # Model definitions for image, audio, video detectors
+├── notebooks/            # Jupyter notebooks for training and evaluation of modules
+├── raw_data/             # Raw datasets 
+├── report_figures/       # Scripts and generated figures for the final report
+└── saved_models/         # Saved model weights 
 ```
 
 ---
@@ -81,7 +83,7 @@ python -m model_training.data_process_scripts.process_faceforensics_to_images
 # Audio data — sample and split ASVspoof 2021 into class folders
 python -m model_training.data_process_scripts.prepare_audio_dataset
 
-# Video data — extract face frames + audio waveforms into .pt tensors
+# Video data — extract face frames + audio waveforms from FakeAVCeleb video into .pt tensors
 python -m model_training.data_process_scripts.preprocess_video
 ```
 
@@ -93,27 +95,19 @@ After preprocessing, the processed datasets will be written to `model_training/d
 
 Training and evaluation are driven through **Jupyter notebooks** located in `model_training/notebooks/`. Each notebook imports from the shared `configs`, `models`, `data_loaders`, `engine`, and `common` packages.
 
-### Training
-
 Open and run the relevant notebook **cell by cell** (or "Run All"):
 
 | Notebook | Detection Module | Description |
 |----------|------------------|-------------|
 | `image_CLIP_Stream.ipynb` | Image — Spatial Stream | Trains the CLIP ViT-L/14 classifier |
 | `image_Noise_Stream.ipynb` | Image — Noise Stream | Trains the SRM + EfficientNetV2-S  |
+| `image_two_stream_fusion.ipynb` | Image — Two-Stream Fusion | Evaluates spatial (CLIP) + noise (SRM/ENetV2) stream fusion models  |
 | `audio_CNN_GRU.ipynb` | Audio | Trains the dual-feature (Mel + LFCC) CNN-GRU  |
 | `video_multimodal_network.ipynb` | Video | Trains the tri-stream (image + audio + sync) detection network |
 
-Each notebook handles its own data loading, model instantiation, training loop, and saves checkpoints to disk upon completion.
+Saved model weights (`.pt` files) should be placed in `model_training/saved_models/` .
 
-### Evaluation / Inference with Pre-trained Weights
-
-To evaluate a trained model **without retraining from scratch**, use the fusion or standalone evaluation cells within the notebooks:
-
-- **Image module (score-level fusion):** Open `image_Two_Stream_Fusion.ipynb`. This notebook loads the pre-trained CLIP and Noise stream weights, runs inference on the test set, and performs a fusion-weight sweep to report final metrics.
-- **Audio and Video modules:** Each training notebook (`audio_CNN_GRU.ipynb`, `video_multimodal_network.ipynb`) includes evaluation cells at the end that load the best checkpoint and compute test-set metrics (accuracy, AUC-ROC, confusion matrix, etc.).
-
-To run evaluation only, skip the training cells and execute from the checkpoint-loading cell onwards. Saved model weights (`.pt` files) should be placed in `model_training/saved_models/` or the path referenced in the notebook.
+Note: The `model_training/saved_models/` folder is empty when cloned from GitHub. All required model weights (`.pt` files) are stored in `backend/models/`.
 
 ---
 
