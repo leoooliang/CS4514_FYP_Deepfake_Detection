@@ -107,12 +107,12 @@ Open and run the relevant notebook **cell by cell** (or "Run All"):
 | `audio_CNN_GRU.ipynb` | Audio | Trains the dual-feature (Mel + LFCC) CNN-GRU  |
 | `video_multimodal_network.ipynb` | Video | Trains the tri-stream (image + audio + sync) detection network |
 
-Saved model weights (`.pt` files) should be placed in `model_training/saved_models/` .
+Saved model weights (checkpoint files, typically `.pth`) should be placed in `model_training/saved_models/`.
 
-Note: The `model_training/saved_models/` folder is empty when cloned from GitHub. All required model weights (`.pt` files) are stored in `backend/models/`.
+**Note for assessors:** The `model_training/saved_models/` directory is empty in the repository as cloned from GitHub. Because of file size limits, please download the **saved model weights** (`.pth` files) from the Google Drive ([Click here](https://drive.google.com/drive/folders/1wpxQEAisTJALgAd0Y4g-svjv8B94iMXN?usp=drive_link)) and **place** the files in `model_training/saved_models/` (same filenames and layout as described in the notebooks or report) if you want to directly running evaluation cells or reproducing reported metrics without training.
 
 ---
 
 ## Important Note for Assessors
 
-Due to the random weight initialization, GPU non-determinism in cuDNN operations, and mixed-precision arithmetic, running the training notebooks from scratch may produce metrics (e.g., accuracy, AUC-ROC) that differ slightly from the exact figures reported in the Final Report. However, the overall convergence behaviour and relative performance across modules should remain consistent. The saved model checkpoints used to generate the reported results are included where possible to allow direct reproduction of the evaluation metrics without retraining.
+Due to the random weight initialization, GPU non-determinism in cuDNN operations, and mixed-precision arithmetic, running the training notebooks from scratch may produce metrics (e.g., accuracy, AUC-ROC) that differ slightly from the exact figures reported in the Final Report. However, the overall convergence behaviour and relative performance across modules should remain consistent. After downloading the pre-trained weights into `model_training/saved_models/` (see the note above), you can load those checkpoints to reproduce the evaluation metrics reported in the Final Report without retraining from scratch.
