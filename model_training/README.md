@@ -39,14 +39,16 @@ model_training/
 
 ### Installing Dependencies
 
-A `requirements.txt` is provided at the repository root under `backend/`. The core deep-learning dependencies relevant to model training are listed below. Install the full backend dependency set (which covers all training requirements):
+Install the required packages directly:
 
 ```bash
-pip install -r backend/requirements.txt
-pip install kornia scikit-learn matplotlib seaborn jupyter
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+pip install transformers librosa opencv-python Pillow numpy
+pip install kornia scikit-learn matplotlib seaborn tqdm pandas
+pip install facenet-pytorch jupyter
 ```
 
-> **Note:** PyTorch with CUDA 12.1 is used. If your system has a different CUDA version, refer to the [PyTorch installation guide](https://pytorch.org/get-started/locally/) for the correct `--index-url`.
+> **Note:** The commands above install PyTorch with CUDA 12.1. If your system has a different CUDA version, refer to the [PyTorch installation guide](https://pytorch.org/get-started/locally/) for the correct `--index-url`.
 
 ---
 
