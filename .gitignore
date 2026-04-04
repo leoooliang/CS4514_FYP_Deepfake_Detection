@@ -74,13 +74,12 @@ model_training/raw_data/FakeAVCeleb_v1.2/
 
 #  model_training — outputs & backups
 model_training/results/
-model_training/utils/
 model_training/save_notebooks/
+model_training/utils/
 
 
 #  backend — runtime directories
 backend/uploads/
-backend/models/
 backend/logs/
 backend/persistent_media/
 backend/scripts/

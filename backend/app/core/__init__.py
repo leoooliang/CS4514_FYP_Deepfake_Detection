@@ -1,3 +1,3 @@
 """
-Core utilities package
+Core utilities - exceptions, validation, helpers.
 """

@@ -1,289 +1,249 @@
 """
-============================================================================
-Configuration Management - Environment Variables & Settings
-============================================================================
-Centralized configuration using Pydantic Settings for type-safe config.
+Centralized configuration.
 
 Usage:
-    from app.config import settings
-    print(settings.API_V1_PREFIX)
-============================================================================
+    from app.config import settings, DEVICE
 """
 
+import inspect
+import logging
 import os
-from typing import List, Optional
-from pydantic_settings import BaseSettings
+import sys
+from typing import Any, List, Optional
+
 from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings
+
+from loguru import logger
+
+from app.core.access_log import effective_uvicorn_access_level
+from app.core.request_context import format_request_id_prefix
 
 
 class Settings(BaseSettings):
     """
-    Application settings loaded from environment variables.
-    
-    All settings can be overridden by creating a .env file in the backend directory.
+    Application settings loaded from environment variables / .env file.
     """
-    
-    # =========================================================================
-    # Application Settings
-    # =========================================================================
-    APP_NAME: str = "Multimodal Deepfake Detection System"
+
+    # Application
+    APP_NAME: str = "Deepfake Detection System"
     ENVIRONMENT: str = Field(default="development")
     DEBUG: bool = Field(default=True)
     VERSION: str = "1.0.0"
-    
-    # =========================================================================
-    # Server Configuration
-    # =========================================================================
+
+    # Server
     HOST: str = Field(default="0.0.0.0")
     PORT: int = Field(default=8000)
-    
-    # API prefix for versioning
     API_V1_PREFIX: str = "/api/v1"
-    
-    # =========================================================================
-    # CORS Settings
-    # =========================================================================
+
+    # CORS
     ALLOWED_ORIGINS: List[str] = Field(
         default=[
-            "http://localhost:5173",  # Vite dev server
-            "http://localhost:3000",  # Alternative React port
+            "http://localhost:5173",
+            "http://localhost:3000",
             "http://127.0.0.1:5173",
-            "http://127.0.0.1:3000"
+            "http://127.0.0.1:3000",
         ]
     )
-    
-    ALLOWED_HOSTS: List[str] = Field(
-        default=["localhost", "127.0.0.1"]
-    )
-    
-    # =========================================================================
-    # File Upload Settings
-    # =========================================================================
-    # Maximum file sizes in MB
+    ALLOWED_HOSTS: List[str] = Field(default=["localhost", "127.0.0.1"])
+
+    # File uploads
     MAX_IMAGE_SIZE_MB: int = Field(default=100)
     MAX_VIDEO_SIZE_MB: int = Field(default=100)
     MAX_AUDIO_SIZE_MB: int = Field(default=100)
-    
-    # Allowed file extensions
+
     ALLOWED_IMAGE_EXTENSIONS: List[str] = [".jpg", ".jpeg", ".png", ".bmp", ".webp"]
     ALLOWED_VIDEO_EXTENSIONS: List[str] = [".mp4", ".avi", ".mov", ".mkv", ".webm"]
     ALLOWED_AUDIO_EXTENSIONS: List[str] = [".mp3", ".wav", ".flac", ".ogg", ".m4a"]
-    
-    # Temporary upload directory
+
     UPLOAD_DIR: str = Field(default="./uploads")
-    
-    # =========================================================================
-    # ML Model Paths
-    # =========================================================================
-    # Paths to the trained model files
-    # Models are loaded from backend/models/ directory
+
+    # ML model paths
     MODEL_DIR: str = Field(default="models")
-    
-    # Paths to specific trained models
-    # These point to the actual trained models from your FYP training
-    IMAGE_MODEL_PATH: Optional[str] = Field(
-        default="models/best_noise_efficientnet.pth"
-    )
-    VIDEO_MODEL_PATH: Optional[str] = Field(
-        default="models/best_video_tristream.pth"
-    )
-    AUDIO_MODEL_PATH: Optional[str] = Field(
-        default="models/best_audio_cnn_gru.pth"
-    )
-    
-    # =========================================================================
-    # Model Inference Settings
-    # =========================================================================
-    # Device for PyTorch (cpu, cuda, mps)
-    # Auto-detect CUDA availability by default
+    IMAGE_SPATIAL_MODEL_PATH: Optional[str] = Field(default="models/best_clip.pth")
+    IMAGE_NOISE_MODEL_PATH: Optional[str] = Field(default="models/best_noise_efficientnet.pth")
+    VIDEO_MODEL_PATH: Optional[str] = Field(default="models/best_video_tristream.pth")
+    AUDIO_MODEL_PATH: Optional[str] = Field(default="models/best_audio_cnn_gru.pth")
+
+    # Inference
     DEVICE: str = Field(default="auto")
-    
-    # Batch size for processing
     BATCH_SIZE: int = Field(default=1)
-    
-    # Number of worker threads
     NUM_WORKERS: int = Field(default=2)
-    
-    # Confidence threshold for predictions
     CONFIDENCE_THRESHOLD: float = Field(default=0.5)
-    
-    # =========================================================================
-    # Video Processing Settings
-    # =========================================================================
-    # Extract N frames per second from video
+
+    # Video processing
     VIDEO_FPS_SAMPLE_RATE: int = Field(default=1)
-    
-    # Maximum number of frames to process
     MAX_FRAMES_TO_PROCESS: int = Field(default=100)
-    
-    # =========================================================================
-    # Audio Processing Settings
-    # =========================================================================
-    # Sample rate for audio processing
+
+    # Audio processing
     AUDIO_SAMPLE_RATE: int = Field(default=16000)
-    
-    # Segment duration in seconds (model trained with 4s segments)
     AUDIO_SEGMENT_DURATION: int = Field(default=4)
-    
-    # =========================================================================
-    # Security Settings
-    # =========================================================================
-    # Secret key for JWT tokens (if implementing authentication)
-    SECRET_KEY: str = Field(
-        default="your-secret-key-change-in-production"
-    )
-    
-    # Rate limiting (requests per minute)
-    RATE_LIMIT: int = Field(default=30)
-    
-    # =========================================================================
-    # Logging Settings
-    # =========================================================================
+
+    # Logging
     LOG_LEVEL: str = Field(default="INFO")
     LOG_FILE: str = Field(default="logs/app.log")
-    
-    # =========================================================================
-    # Database Settings (for future expansion)
-    # =========================================================================
-    DATABASE_URL: Optional[str] = Field(default=None)
-    
-    # =========================================================================
-    # Redis Cache Settings (for future expansion)
-    # =========================================================================
-    REDIS_URL: Optional[str] = Field(default=None)
-    CACHE_TTL: int = Field(default=3600)  # Cache time-to-live in seconds
-    
-    # =========================================================================
+
+    # Database
+    DATABASE_URL: str = Field(default="sqlite:///./sql_app.db")
+
     # Validators
-    # =========================================================================
-    
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, v):
-        """Parse CORS origins from comma-separated string or list."""
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",")]
         return v
-    
+
     @field_validator("UPLOAD_DIR", "MODEL_DIR")
     @classmethod
     def create_directories(cls, v):
-        """Ensure required directories exist."""
         os.makedirs(v, exist_ok=True)
         return v
-    
+
+    # Derived properties
     @property
     def max_image_size_bytes(self) -> int:
-        """Convert MB to bytes for image size validation."""
         return self.MAX_IMAGE_SIZE_MB * 1024 * 1024
-    
+
     @property
     def max_video_size_bytes(self) -> int:
-        """Convert MB to bytes for video size validation."""
         return self.MAX_VIDEO_SIZE_MB * 1024 * 1024
-    
+
     @property
     def max_audio_size_bytes(self) -> int:
-        """Convert MB to bytes for audio size validation."""
         return self.MAX_AUDIO_SIZE_MB * 1024 * 1024
-    
-    # =========================================================================
-    # Pydantic Config
-    # =========================================================================
-    
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
-        "case_sensitive": True
+        "case_sensitive": True,
     }
 
 
-# =============================================================================
-# Global Settings Instance
-# =============================================================================
-# This is the single source of truth for all configuration in the application
 settings = Settings()
 
-
-# =============================================================================
-# Logging Configuration (Initialize BEFORE device detection)
-# =============================================================================
-from loguru import logger
-import sys
-
-# Configure loguru logger
 logger.remove()
-logger.add(
-    sys.stderr,
-    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-    level=settings.LOG_LEVEL
+
+
+def _loguru_request_patcher(record: Any) -> None:
+    record["extra"]["request_id"] = format_request_id_prefix()
+
+
+_CONSOLE_FORMAT = (
+    "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+    "<level>{level: <8}</level> | "
+    "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
+    "<level>{extra[request_id]}{message}</level>"
 )
 
-# Add file logging if specified
+_FILE_FORMAT = (
+    "{time:YYYY-MM-DD HH:mm:ss.SSS} | "
+    "{level: <8} | "
+    "{name}:{function}:{line} | "
+    "{extra[request_id]}{message}"
+)
+
+logger.configure(extra={"request_id": ""}, patcher=_loguru_request_patcher)
+
+logger.add(
+    sys.stderr,
+    format=_CONSOLE_FORMAT,
+    level=settings.LOG_LEVEL,
+    colorize=True,
+    backtrace=True,
+    diagnose=settings.DEBUG,
+)
+
 if settings.LOG_FILE:
     log_dir = os.path.dirname(settings.LOG_FILE)
     if log_dir:
         os.makedirs(log_dir, exist_ok=True)
-    
     logger.add(
         settings.LOG_FILE,
+        format=_FILE_FORMAT,
         rotation="500 MB",
         retention="10 days",
         compression="zip",
-        level=settings.LOG_LEVEL
+        level=settings.LOG_LEVEL,
+        backtrace=True,
+        diagnose=False,
     )
 
 
-# =============================================================================
-# CUDA/GPU Auto-Detection
-# =============================================================================
-def get_device() -> str:
+def _attach_uvicorn_logs_to_loguru() -> None:
     """
-    Automatically detect the best available device for PyTorch.
-    
-    Priority:
-        1. CUDA (NVIDIA GPU) if available
-        2. MPS (Apple Silicon) if available
-        3. CPU as fallback
-    
-    Returns:
-        str: Device string ("cuda", "mps", or "cpu")
+    Send uvicorn's logging through loguru so lines include the same date/time as app logs.
     """
-    import torch
-    
-    if settings.DEVICE.lower() == "auto":
-        if torch.cuda.is_available():
-            device = "cuda"
-            gpu_name = torch.cuda.get_device_name(0)
-            gpu_count = torch.cuda.device_count()
-            logger.info(f"✓ CUDA GPU detected: {gpu_name} ({gpu_count} GPU(s) available)")
-            logger.info(f"  CUDA Version: {torch.version.cuda}")
-            logger.info(f"  PyTorch Version: {torch.__version__}")
-        elif torch.backends.mps.is_available():
-            device = "mps"
-            logger.info("✓ Apple MPS (Metal Performance Shaders) detected")
-        else:
-            device = "cpu"
-            logger.warning("⚠ No GPU detected, using CPU (this will be slower)")
-        
-        # Update settings with detected device
-        settings.DEVICE = device
-        return device
-    else:
-        # User specified a device, validate it
-        device = settings.DEVICE.lower()
-        import torch
-        
-        if device == "cuda" and not torch.cuda.is_available():
-            logger.warning("⚠ CUDA requested but not available, falling back to CPU")
-            settings.DEVICE = "cpu"
-            return "cpu"
-        elif device == "mps" and not torch.backends.mps.is_available():
-            logger.warning("⚠ MPS requested but not available, falling back to CPU")
-            settings.DEVICE = "cpu"
-            return "cpu"
-        
-        return device
 
-# Auto-detect device on import
-DEVICE = get_device()
+    class InterceptHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            msg = record.getMessage()
+            if record.name == "uvicorn.access":
+                level_name = effective_uvicorn_access_level(msg, record.levelname)
+            else:
+                level_name = record.levelname
+            try:
+                level = logger.level(level_name).name
+            except ValueError:
+                level = str(record.levelno)
+            frame, depth = inspect.currentframe(), 2
+            while frame is not None and frame.f_code.co_filename == logging.__file__:
+                frame = frame.f_back
+                depth += 1
+            logger.opt(depth=depth, exception=record.exc_info).log(level, msg)
+
+    h = InterceptHandler()
+    level_map = {
+        "TRACE": logging.DEBUG,
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL,
+    }
+    py_level = level_map.get(settings.LOG_LEVEL.upper(), logging.INFO)
+    for name in ("uvicorn", "uvicorn.access"):
+        lg = logging.getLogger(name)
+        lg.handlers.clear()
+        lg.addHandler(h)
+        lg.propagate = False
+        lg.setLevel(py_level)
+    logging.getLogger("uvicorn.error").setLevel(py_level)
+
+
+_attach_uvicorn_logs_to_loguru()
+
+
+def _detect_device() -> str:
+    """
+    Return the best available PyTorch device string.
+    """
+    
+    import torch
+
+    requested = settings.DEVICE.lower()
+
+    if requested != "auto":
+        if requested == "cuda" and not torch.cuda.is_available():
+            logger.warning("CUDA requested but not available, falling back to CPU")
+            return "cpu"
+        if requested == "mps" and not torch.backends.mps.is_available():
+            logger.warning("MPS requested but not available, falling back to CPU")
+            return "cpu"
+        logger.info("Device explicitly set to '{}'", requested)
+        return requested
+
+    if torch.cuda.is_available():
+        gpu_name = torch.cuda.get_device_name(0)
+        vram_mb = torch.cuda.get_device_properties(0).total_memory / (1024 * 1024)
+        logger.info("CUDA GPU detected: {} ({:.0f} MB VRAM)", gpu_name, vram_mb)
+        return "cuda"
+    if torch.backends.mps.is_available():
+        logger.info("Apple MPS backend detected")
+        return "mps"
+
+    logger.warning("No GPU detected, using CPU")
+    return "cpu"
+
+
+DEVICE: str = _detect_device()

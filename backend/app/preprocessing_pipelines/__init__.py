@@ -1,11 +1,9 @@
 """
-Preprocessing Pipelines Module
-================================
-Dedicated preprocessing utilities for image, audio, and video modalities.
+Preprocessing pipelines for Image / Audio / Video Detection Modules.
 """
 
-from .image_preprocessor import ImagePreprocessor
 from .audio_preprocessor import AudioPreprocessor
+from .image_preprocessor import ImagePreprocessor
 from .video_preprocessor import VideoPreprocessor
 
 __all__ = ["ImagePreprocessor", "AudioPreprocessor", "VideoPreprocessor"]
