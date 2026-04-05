@@ -18,7 +18,7 @@ A deepfake detection **web application**: users upload images, audio, or video, 
 - [frontend/README.md](frontend/README.md)
 - [model_training/README.md](model_training/README.md)
 
-## 🚀 Quick start (local)
+## Quick start (local)
 
 You typically run three things in parallel:
 
@@ -28,6 +28,6 @@ You typically run three things in parallel:
 
 > **Notes**: **FFmpeg** on `PATH` for video handling; a **CUDA** GPU is recommended for inference latency.
 
-## 👤 Author
+## Author
 
 Developed by **LIANG Wai Ching** as a Final Year Project at the **Department of Computer Science, City University of Hong Kong**.
