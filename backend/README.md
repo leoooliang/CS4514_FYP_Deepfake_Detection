@@ -15,6 +15,7 @@ This folder contains the **FastAPI** application for the Final Year Project *Det
 1. **Create a virtual environment** (from this `backend` directory):
 
    ```bash
+   cd backend
    python -m venv .venv
    ```
 
