@@ -1,21 +1,5 @@
-/**
- * ============================================================================
- * FileUpload Component - Drag & Drop File Upload Zone
- * ============================================================================
- * Beautiful drag-and-drop file upload component with:
- *   - Visual feedback
- *   - File validation
- *   - Preview support
- *   - Animation effects
- * 
- * Author: Senior Full-Stack Engineer
- * Date: 2026-01-28
- * ============================================================================
- */
-
 import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { motion } from 'framer-motion';
 import { Upload, File, X, Image, Video, Music } from 'lucide-react';
 import { getFileType, formatFileSize, validateFile } from '../services/api';
 import MediaPreviewModal from './MediaPreviewModal';
@@ -26,7 +10,6 @@ const FileUpload = ({ onFileSelect, onFileRemove, disabled = false }) => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  // Handle file drop
   const onDrop = useCallback((acceptedFiles) => {
     setError(null);
     
@@ -34,23 +17,19 @@ const FileUpload = ({ onFileSelect, onFileRemove, disabled = false }) => {
     
     const file = acceptedFiles[0];
     
-    // Validate file
     const validation = validateFile(file);
     if (!validation.valid) {
       setError(validation.error);
       return;
     }
     
-    // Create preview URL
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
     
-    // Set selected file
     setSelectedFile(file);
     onFileSelect(file);
   }, [onFileSelect]);
 
-  // Configure dropzone
   const {
     getRootProps,
     getInputProps,
@@ -67,7 +46,6 @@ const FileUpload = ({ onFileSelect, onFileRemove, disabled = false }) => {
     disabled
   });
 
-  // Remove selected file
   const handleRemove = () => {
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
@@ -78,7 +56,6 @@ const FileUpload = ({ onFileSelect, onFileRemove, disabled = false }) => {
     onFileRemove();
   };
 
-  // Cleanup preview URL on unmount
   useEffect(() => {
     return () => {
       if (previewUrl) {
@@ -87,112 +64,88 @@ const FileUpload = ({ onFileSelect, onFileRemove, disabled = false }) => {
     };
   }, [previewUrl]);
 
-  // Get icon based on file type
   const getFileIcon = (file) => {
     const type = getFileType(file);
     switch (type) {
       case 'image':
-        return <Image className="w-12 h-12 text-cyber-blue" />;
+        return <Image className="w-10 h-10 text-primary" />;
       case 'video':
-        return <Video className="w-12 h-12 text-cyber-purple" />;
+        return <Video className="w-10 h-10 text-accent-violet" />;
       case 'audio':
-        return <Music className="w-12 h-12 text-cyber-pink" />;
+        return <Music className="w-10 h-10 text-accent-rose" />;
       default:
-        return <File className="w-12 h-12 text-gray-400" />;
+        return <File className="w-10 h-10 text-gray-400" />;
     }
   };
 
   return (
     <div className="w-full">
       {!selectedFile ? (
-        /* Upload Zone */
-        <motion.div
+        <div
           {...getRootProps()}
           className={`
-            relative overflow-hidden rounded-2xl border-2 border-dashed 
-            transition-all duration-300 cursor-pointer
-            ${isDragActive && !isDragReject ? 'border-cyber-blue bg-cyber-blue/10 glow-cyan' : ''}
-            ${isDragReject ? 'border-red-500 bg-red-500/10' : ''}
-            ${!isDragActive && !isDragReject ? 'border-white/20 bg-white/5 hover:border-cyber-blue/50 hover:bg-white/10' : ''}
+            relative overflow-hidden rounded-xl border-2 border-dashed 
+            transition-all duration-200 cursor-pointer
+            ${isDragActive && !isDragReject ? 'border-primary/50 bg-primary/5' : ''}
+            ${isDragReject ? 'border-red-400/40 bg-red-500/5' : ''}
+            ${!isDragActive && !isDragReject ? 'border-white/15 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.04]' : ''}
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
           `}
-          whileHover={{ scale: disabled ? 1 : 1.02 }}
-          whileTap={{ scale: disabled ? 1 : 0.98 }}
         >
           <input {...getInputProps()} />
           
-          <div className="py-16 px-8 text-center">
-            {/* Upload Icon */}
-            <motion.div
-              className="flex justify-center mb-6"
-              animate={isDragActive ? { scale: [1, 1.2, 1] } : {}}
-              transition={{ repeat: isDragActive ? Infinity : 0, duration: 1 }}
-            >
+          <div className="py-14 px-8 text-center">
+            <div className="flex justify-center mb-5">
               <div className={`
-                p-6 rounded-full 
-                ${isDragActive ? 'bg-cyber-blue/20' : 'bg-white/10'}
-                transition-all duration-300
+                p-5 rounded-2xl
+                ${isDragActive ? 'bg-primary/10' : 'bg-white/5'}
+                transition-all duration-200
               `}>
                 <Upload className={`
-                  w-16 h-16 
-                  ${isDragActive ? 'text-cyber-blue' : 'text-gray-400'}
-                  transition-colors duration-300
+                  w-12 h-12 
+                  ${isDragActive ? 'text-primary' : 'text-gray-500'}
+                  transition-colors duration-200
                 `} />
               </div>
-            </motion.div>
+            </div>
 
-            {/* Text */}
-            <h3 className="text-2xl font-bold mb-2 text-gradient-cyber">
+            <h3 className="text-xl font-semibold mb-2 text-white">
               {isDragActive ? 'Drop your file here' : 'Upload Media for Analysis'}
             </h3>
             
-            <p className="text-gray-400 mb-6">
+            <p className="text-gray-500 mb-5 text-sm">
               {isDragReject
                 ? 'Unsupported file type'
                 : 'Drag & drop or click to select a file'
               }
             </p>
 
-            {/* Supported Formats */}
-            <div className="flex flex-wrap justify-center gap-3 mb-6">
-              <div className="badge bg-cyber-blue/20 text-cyber-blue border-cyber-blue/30">
-                <Image className="w-4 h-4 mr-1" />
+            <div className="flex flex-wrap justify-center gap-2 mb-5">
+              <div className="badge bg-primary/10 text-primary border-primary/15">
+                <Image className="w-3.5 h-3.5 mr-1.5" />
                 Images
               </div>
-              <div className="badge bg-cyber-purple/20 text-cyber-purple border-cyber-purple/30">
-                <Video className="w-4 h-4 mr-1" />
+              <div className="badge bg-accent-violet/10 text-accent-violet border-accent-violet/15">
+                <Video className="w-3.5 h-3.5 mr-1.5" />
                 Videos
               </div>
-              <div className="badge bg-cyber-pink/20 text-cyber-pink border-cyber-pink/30">
-                <Music className="w-4 h-4 mr-1" />
+              <div className="badge bg-accent-rose/10 text-accent-rose border-accent-rose/15">
+                <Music className="w-3.5 h-3.5 mr-1.5" />
                 Audio
               </div>
             </div>
 
-            {/* File Size Limit */}
-            <p className="text-sm text-gray-500">
+            <p className="text-xs text-gray-600">
               Maximum file size: 100 MB
             </p>
           </div>
 
-          {/* Scanning Animation Line (when active) */}
-          {isDragActive && (
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              <div className="scanning-line absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyber-blue to-transparent opacity-50" />
-            </div>
-          )}
-        </motion.div>
+        </div>
       ) : (
-        /* Selected File Preview */
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="card glow-cyan"
-        >
-          {/* Media Preview */}
+        <div className="card">
           {previewUrl && (
             <div
-              className="mb-6 rounded-xl overflow-hidden bg-black/30 cursor-pointer"
+              className="mb-5 rounded-lg overflow-hidden bg-black/30 cursor-pointer"
               onClick={() => setIsPreviewOpen(true)}
               title="Click to enlarge preview"
             >
@@ -214,7 +167,7 @@ const FileUpload = ({ onFileSelect, onFileRemove, disabled = false }) => {
               )}
               {getFileType(selectedFile) === 'audio' && (
                 <div className="p-8 flex flex-col items-center justify-center">
-                  <Music className="w-20 h-20 text-cyber-pink mb-4" />
+                  <Music className="w-16 h-16 text-accent-rose mb-4" />
                   <audio
                     src={previewUrl}
                     controls
@@ -227,25 +180,22 @@ const FileUpload = ({ onFileSelect, onFileRemove, disabled = false }) => {
             </div>
           )}
 
-          <div className="flex items-center gap-6">
-            {/* File Icon */}
+          <div className="flex items-center gap-5">
             <div className="flex-shrink-0">
               {getFileIcon(selectedFile)}
             </div>
 
-            {/* File Info */}
             <div className="flex-1 min-w-0">
-              <h4 className="text-lg font-semibold text-white truncate mb-1">
+              <h4 className="text-base font-semibold text-white truncate mb-0.5">
                 {selectedFile.name}
               </h4>
-              <div className="flex items-center gap-4 text-sm text-gray-400">
+              <div className="flex items-center gap-3 text-sm text-gray-500">
                 <span className="capitalize">{getFileType(selectedFile)}</span>
-                <span>•</span>
+                <span>&middot;</span>
                 <span>{formatFileSize(selectedFile.size)}</span>
               </div>
             </div>
 
-            {/* Remove Button */}
             {!disabled && (
               <button
                 onClick={handleRemove}
@@ -253,22 +203,17 @@ const FileUpload = ({ onFileSelect, onFileRemove, disabled = false }) => {
                          text-gray-400 hover:text-red-400 transition-colors"
                 title="Remove file"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               </button>
             )}
           </div>
-        </motion.div>
+        </div>
       )}
 
-      {/* Error Message */}
       {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-4 p-4 rounded-lg bg-red-500/20 border border-red-500/30"
-        >
+        <div className="mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/15">
           <p className="text-red-400 text-sm">{error}</p>
-        </motion.div>
+        </div>
       )}
 
       <MediaPreviewModal

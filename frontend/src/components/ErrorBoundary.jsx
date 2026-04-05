@@ -1,14 +1,3 @@
-/**
- * ============================================================================
- * ErrorBoundary Component - Catch React Rendering Errors
- * ============================================================================
- * Prevents the entire app from crashing when a component throws an error.
- * 
- * Author: Senior Full-Stack Engineer
- * Date: 2026-03-25
- * ============================================================================
- */
-
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
 
@@ -29,11 +18,11 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="card bg-red-500/10 border-red-500/30">
+        <div className="card bg-red-500/10 border-red-500/15">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="text-lg font-semibold text-red-400 mb-1">
+              <h3 className="text-base font-semibold text-red-400 mb-1">
                 Something went wrong
               </h3>
               <p className="text-gray-300 text-sm">
@@ -42,7 +31,7 @@ class ErrorBoundary extends React.Component {
               {this.props.showRetry && (
                 <button
                   onClick={() => this.setState({ hasError: false, error: null })}
-                  className="mt-4 btn-secondary text-sm"
+                  className="mt-3 btn-secondary text-sm"
                 >
                   Try Again
                 </button>

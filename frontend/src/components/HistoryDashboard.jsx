@@ -1,23 +1,4 @@
-/**
- * ============================================================================
- * HistoryDashboard Component - Display Scan History
- * ============================================================================
- * Displays user's scan history with media previews and results.
- * 
- * Features:
- *   - Fetches history from backend
- *   - Displays media previews (image/video/audio)
- *   - Shows prediction results
- *   - Responsive grid layout
- *   - Loading and error states
- * 
- * Author: Senior Full-Stack Engineer
- * Date: 2026-03-25
- * ============================================================================
- */
-
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import {
   History,
   AlertTriangle,
@@ -50,7 +31,6 @@ const HistoryDashboard = () => {
       setCurrentPage(1);
     } catch (err) {
       console.error('Failed to load history:', err);
-      // Set empty array on error to prevent crashes
       setHistory([]);
       setError(err.message || 'Failed to load scan history. Make sure the server is running.');
     } finally {
@@ -85,13 +65,13 @@ const HistoryDashboard = () => {
   const getFileTypeIcon = (fileType) => {
     switch (fileType?.toLowerCase()) {
       case 'image':
-        return <ImageIcon className="w-5 h-5 text-cyber-blue" />;
+        return <ImageIcon className="w-4 h-4 text-primary" />;
       case 'video':
-        return <VideoIcon className="w-5 h-5 text-cyber-purple" />;
+        return <VideoIcon className="w-4 h-4 text-accent-violet" />;
       case 'audio':
-        return <Music className="w-5 h-5 text-cyber-pink" />;
+        return <Music className="w-4 h-4 text-accent-rose" />;
       default:
-        return <ImageIcon className="w-5 h-5 text-gray-400" />;
+        return <ImageIcon className="w-4 h-4 text-gray-400" />;
     }
   };
 
@@ -171,7 +151,7 @@ const HistoryDashboard = () => {
       case 'audio':
         return (
           <div className="w-full h-32 bg-black/20 rounded-lg border border-white/10 flex flex-col items-center justify-center px-4 py-3">
-            <Music className="w-8 h-8 text-cyber-pink mb-2" />
+            <Music className="w-7 h-7 text-accent-rose mb-2" />
             <audio
               src={mediaUrl}
               controls
@@ -193,14 +173,10 @@ const HistoryDashboard = () => {
     return (
       <div className="w-full py-20">
         <div className="text-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-            className="inline-block mb-4"
-          >
-            <RefreshCw className="w-12 h-12 text-cyber-blue" />
-          </motion.div>
-          <p className="text-gray-400 text-lg">Loading your scan history...</p>
+          <div className="inline-block mb-4">
+            <RefreshCw className="w-10 h-10 text-primary animate-spin" />
+          </div>
+          <p className="text-gray-400">Loading your scan history...</p>
         </div>
       </div>
     );
@@ -208,19 +184,15 @@ const HistoryDashboard = () => {
 
   if (error) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="card bg-yellow-500/10 border-yellow-500/30"
-      >
+      <div className="card bg-yellow-500/5 border-yellow-500/10">
         <div className="flex items-start gap-3">
-          <AlertCircle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="text-lg font-semibold text-yellow-400 mb-1">
+            <h3 className="text-base font-semibold text-yellow-400 mb-1">
               Unable to Load Scan History
             </h3>
-            <p className="text-gray-300 mb-2">{error}</p>
-            <p className="text-sm text-gray-400 mb-4">
+            <p className="text-sm text-gray-300 mb-2">{error}</p>
+            <p className="text-sm text-gray-500 mb-4">
               Your scan history will be available once the server is running.
             </p>
             <button
@@ -232,25 +204,21 @@ const HistoryDashboard = () => {
             </button>
           </div>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   if (history.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="card text-center py-16"
-      >
-        <History className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-gray-400 mb-2">
+      <div className="card text-center py-14">
+        <History className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+        <h3 className="text-lg font-semibold text-gray-400 mb-1">
           No history found
         </h3>
-        <p className="text-gray-500">
+        <p className="text-sm text-gray-500">
           Upload your first file to start building your detection history.
         </p>
-      </motion.div>
+      </div>
     );
   }
 
@@ -264,20 +232,13 @@ const HistoryDashboard = () => {
 
   return (
     <div className="w-full">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between mb-8"
-      >
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-cyber-blue/10 border border-cyber-blue/20">
-            <History className="w-6 h-6 text-cyber-blue" />
-          </div>
           <div>
-            <h2 className="text-3xl font-black tracking-tight text-white">
+            <h2 className="text-2xl font-bold tracking-tight text-white">
               Detection History
             </h2>
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-500 text-sm">
               {history.length} {history.length === 1 ? 'scan' : 'scans'} in this session
             </p>
           </div>
@@ -289,9 +250,9 @@ const HistoryDashboard = () => {
           <RefreshCw className="w-4 h-4" />
           Refresh
         </button>
-      </motion.div>
+      </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {paginatedHistory.map((record, index) => {
           const isDeepfake =
             record.classification?.toLowerCase() === 'fake' ||
@@ -306,43 +267,33 @@ const HistoryDashboard = () => {
           })();
           
           return (
-            <motion.div
+            <div
               key={record.id || index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.03 }}
-              className={`
-                card-hover overflow-hidden
-                ${isDeepfake ? 'border-red-500/20 hover:border-red-500/40' : 'border-green-500/20 hover:border-green-500/40'}
-                transition-all duration-300
-              `}
+              className="card-hover overflow-hidden"
               onClick={() => {
                 setSelectedRecord(record);
               }}
             >
               <div className="flex flex-col md:flex-row gap-4">
-                {/* Media Preview Section */}
                 <div className="md:w-48 flex-shrink-0">
                   {renderMediaPreview(record)}
                 </div>
 
-                {/* Details Section */}
                 <div className="flex-1 flex flex-col justify-between min-w-0">
-                  {/* File Info Row */}
                   <div className="mb-3">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-1.5">
                       {getFileTypeIcon(record.file_type)}
-                      <span className="text-base font-semibold text-white truncate">
+                      <span className="text-sm font-semibold text-white truncate">
                         {record.file_name}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-gray-500">
                       <span className="capitalize">{record.file_type}</span>
-                      <span>•</span>
+                      <span>&middot;</span>
                       <span>
                         {formatFileSize(record.file_size)}
                       </span>
-                      <span>•</span>
+                      <span>&middot;</span>
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {formatDate(record.timestamp)}
@@ -350,31 +301,26 @@ const HistoryDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Detection Result Row */}
                   <div className="flex items-center justify-between gap-4">
-                    <div className={`
-                      flex items-center gap-3 px-4 py-2.5 rounded-lg flex-1
-                      ${isDeepfake ? 'bg-red-500/10 border border-red-500/20' : 'bg-green-500/10 border border-green-500/20'}
-                    `}>
+                    <div className="flex items-center gap-3 px-3.5 py-2 rounded-lg flex-1 bg-white/[0.03] border border-white/10">
                       {isDeepfake ? (
-                        <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                        <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
                       ) : (
-                        <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                       )}
                       <div className="flex-1">
-                        <div className={`text-sm font-bold ${isDeepfake ? 'text-red-400' : 'text-green-400'}`}>
+                        <div className={`text-sm font-semibold ${isDeepfake ? 'text-red-400' : 'text-green-400'}`}>
                           {isDeepfake ? 'Deepfake Detected' : 'Real Media'}
                         </div>
-                        <div className="text-xs text-gray-400">
+                        <div className="text-xs text-gray-500">
                           Confidence: {detectionPercent === null ? 'N/A' : `${detectionPercent.toFixed(1)}%`}
                         </div>
                       </div>
                     </div>
 
-                    {/* Processing Time Badge */}
                     {(record.processing_duration || record.processing_time) && (
-                      <div className="text-xs text-gray-500 bg-white/5 px-3 py-2 rounded-lg border border-white/10">
-                        <div className="font-semibold text-gray-400">Processing Time</div>
+                      <div className="text-xs text-gray-500 bg-white/[0.03] px-3 py-2 rounded-lg border border-white/10">
+                        <div className="font-medium text-gray-400">Processing Time</div>
                         <div className="text-white font-mono">
                           {(record.processing_duration || record.processing_time).toFixed(2)}s
                         </div>
@@ -383,14 +329,14 @@ const HistoryDashboard = () => {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           );
         })}
       </div>
 
       {totalPages > 1 && (
-        <div className="mt-8 flex items-center justify-between gap-3">
-          <p className="text-sm text-gray-400">
+        <div className="mt-6 flex items-center justify-between gap-3">
+          <p className="text-sm text-gray-500">
             Showing {pageStart + 1}-{Math.min(pageEnd, history.length)} of {history.length}
           </p>
           <div className="flex items-center gap-2">
@@ -398,20 +344,22 @@ const HistoryDashboard = () => {
               type="button"
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
-              className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-secondary min-w-[2.5rem] px-3 py-2 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Previous page"
             >
-              Previous
+              {'<'}
             </button>
-            <span className="text-sm text-gray-300 px-2">
+            <span className="text-sm text-gray-400 px-2">
               Page {currentPage} / {totalPages}
             </span>
             <button
               type="button"
               onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
-              className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-secondary min-w-[2.5rem] px-3 py-2 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Next page"
             >
-              Next
+              {'>'}
             </button>
           </div>
         </div>
